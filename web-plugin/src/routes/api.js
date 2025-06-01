@@ -7,5 +7,20 @@ router.get('/example', (req, res) => {
 });
 
 // Add more API endpoints as needed
+router.get('/river-structures', (req, res) => {
+    const structures = [
+        {
+            id: 1,
+            name: "Test Barrage",
+            type: "barrage",
+            lat: 46.2276,
+            lng: 2.2137,
+            river: "Loire",
+            height: 50,
+            year: 2000
+        }
+    ];
+    res.json(structures);
+});
 
 module.exports = router;
