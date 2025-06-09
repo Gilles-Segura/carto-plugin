@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Atlas visualization plugin</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100vh; width: 100vw; }
+    .legend {
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+    .legend-item {
+      margin-bottom: 5px;
+    }
+    .legend-color {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .marker-cluster-custom {
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #000;
+    }
+    .marker-cluster-custom div {
+      margin: 5px;
+    }
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .loader {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="loading">
+    <div class="loader"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // Charger les credentials sécurisés depuis une URL temporaire
+    async function initializeApp() {
+      try {
+        // Afficher l'indicateur de chargement
+        document.getElementById('loading').style.display = 'flex';
+        
+        // Configuration Supabase - URL publique qui ne pose pas de problème de sécurité
+        const supabaseUrl = 'https://qidnzebmtbxhabtsprkx.supabase.co';
+        
+        // On utilise l'authentification anonyme pour obtenir un token temporaire
+        // Remplacer cette clé par une clé d'authentification anonyme configurée dans Supabase
+        // avec des permissions RLS restreintes
+        const anonKey = 'REMPLACER_PAR_UNE_CLÉ_ANON_PUBLIQUE'; 
+        
+        // Créer le client Supabase avec des permissions limitées
+        const supabase = supabase.createClient(supabaseUrl, anonKey);
+        
+        // Authentification anonyme (pas besoin d'identifiants utilisateur)
+        const { data, error } = await supabase.auth.signInAnonymously();
+        
+        if (error) throw new Error("Erreur d'authentification anonyme");
+        
+        // Initialiser l'application avec le client Supabase maintenant authentifié
+        // qui a maintenant un token JWT avec des permissions limitées par RLS
+        initMap(supabase);
+      } catch (error) {
+        console.error('Erreur d\'initialisation:', error);
+        document.getElementById('loading').innerHTML = 
+          '<div style="background: white; padding: 20px; border-radius: 5px;">' +
+          '<p>Erreur de connexion aux données. Veuillez réessayer plus tard.</p></div>';
+      }
+    }
+    
+    function initMap(supabaseClient) {
+      // Initialisation de la carte Leaflet
+      const map = L.map('map').setView([46.5, 2.5], 6); // Coordonnées et zoom initiaux
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      // Couleurs pour différents types
+      const typeColors = {};
+      const colorList = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf', '#999999'];
+      let colorIndex = 0;
+
+      // Cache des icônes pour éviter de les recréer
+      const iconCache = {};
+
+      // Création d'une icône personnalisée selon le type
+      function createCustomIcon(type) {
+        if (!type) type = 'default';
+        
+        // Si on a déjà créé une icône pour ce type, la réutiliser
+        if (iconCache[type]) return iconCache[type];
+
+        // Assigner une couleur au type s'il n'en a pas déjà une
+        if (!typeColors[type]) {
+          typeColors[type] = colorList[colorIndex % colorList.length];
+          colorIndex++;
+        }
+        
+        // Créer un élément SVG pour l'icône
+        const svgTemplate = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+            <circle cx="12" cy="12" r="10" fill="${typeColors[type]}" stroke="white" stroke-width="2"/>
+          </svg>
+        `;
+        
+        // Créer une URL data pour l'icône SVG
+        const svgUrl = 'data:image/svg+xml;base64,' + btoa(svgTemplate);
+        
+        // Créer et cacher l'icône
+        iconCache[type] = L.icon({
+          iconUrl: svgUrl,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+          popupAnchor: [0, -12]
+        });
+        
+        return iconCache[type];
+      }
+      
+      // Fonction pour créer un cluster personnalisé
+      function createClusterIcon(cluster) {
+        const count = cluster.getChildCount();
+        
+        // Créer l'élément HTML pour l'icône de cluster
+        return L.divIcon({
+          html: `<div class="marker-cluster-custom"><div>${count}</div></div>`,
+          className: 'marker-cluster-custom-wrapper',
+          iconSize: new L.Point(40, 40)
+        });
+      }
+
+      async function chargerEtAfficherDonnees() {
+        try {
+          // 1. Lire la table "typeatlas" pour obtenir la liste des noms de tables et leurs types
+          const { data: tablesInfo, error: errorTables } = await supabaseClient
+            .from('typeatlas')
+            .select('table_name, table_type');
+
+          if (errorTables) {
+            console.error('Erreur lors de la lecture de typeatlas:', errorTables.message);
+            throw new Error('Erreur de chargement des types de tables: ' + errorTables.message);
+          }
+
+          if (!tablesInfo || tablesInfo.length === 0) {
+            console.warn('Aucune table trouvée dans typeatlas.');
+            throw new Error('Aucune table de données à afficher.');
+          }
+
+          // Filtrer les tables et associer chaque table à son type
+          const tableConfigs = tablesInfo
+            .filter(info => info.table_name && info.table_name.trim() !== '' && info.table_name !== 'atlas2020')
+            .map(info => ({
+              name: info.table_name,
+              type: info.table_type || 'unknown'
+            }));
+
+          console.log('Tables à charger avec leurs types:', tableConfigs);
+          
+          const allPoints = [];
+          
+          // 2. Pour chaque nom de table récupéré, lire les données
+          for (const tableConfig of tableConfigs) {
+            console.log(`Chargement des données pour la table: ${tableConfig.name} (type: ${tableConfig.type})`);
+            const { data: points, error: errorPoints } = await supabaseClient
+              .from(tableConfig.name)
+              .select('id, type, longitude, latitude');
+
+            if (errorPoints) {
+              console.error(`Erreur lors de la lecture de la table ${tableConfig.name}:`, errorPoints.message);
+              continue;
+            }
+
+            if (points && points.length > 0) {
+              // Collecter tous les points valides
+              points.forEach(point => {
+                if (typeof point.latitude === 'number' && typeof point.longitude === 'number') {
+                  allPoints.push({
+                    ...point,
+                    tableConfig
+                  });
+                } else {
+                  console.warn(`Données de localisation invalides pour un point de la table ${tableConfig.name}:`, point);
+                }
+              });
+              console.log(`${points.length} points chargés pour ${tableConfig.name}`);
+            } else {
+              console.log(`Aucun point trouvé pour la table ${tableConfig.name}`);
+            }
+          }
+
+          // Création du groupe de clusters principal
+          const mainClusterGroup = L.markerClusterGroup({
+            maxClusterRadius: function(zoom) {
+              // À faible zoom, augmenter le rayon de clustering pour regrouper par pays
+              return zoom <= 4 ? 100 : 80;
+            },
+            iconCreateFunction: createClusterIcon
+          });
+
+          // Ajouter les marqueurs au groupe de clusters
+          for (const point of allPoints) {
+            const markerType = point.type || point.tableConfig.type;
+            const customIcon = createCustomIcon(markerType);
+            
+            const marker = L.marker([point.latitude, point.longitude], { icon: customIcon })
+              .bindPopup(
+                `<b>Table:</b> ${point.tableConfig.name}<br>
+                 <b>Type:</b> ${markerType || 'N/A'}<br>
+                 <b>ID:</b> ${point.id || 'N/A'}`
+              );
+            
+            mainClusterGroup.addLayer(marker);
+          }
+          
+          // Ajouter le groupe de clusters à la carte
+          map.addLayer(mainClusterGroup);
+          
+          // Ajouter une légende avec les différents types
+          if (Object.keys(typeColors).length > 0) {
+            createLegend();
+          }
+          
+          // Masquer l'indicateur de chargement
+          document.getElementById('loading').style.display = 'none';
+          
+        } catch (error) {
+          console.error('Erreur générale lors du chargement des données:', error);
+          document.getElementById('loading').innerHTML = 
+            '<div style="background: white; padding: 20px; border-radius: 5px;">' +
+            `<p>Erreur: ${error.message}</p></div>`;
+        }
+      }
+      
+      // Création d'une légende pour la carte
+      function createLegend() {
+        const legend = L.control({ position: 'bottomright' });
+        
+        legend.onAdd = function() {
+          const div = L.DomUtil.create('div', 'legend');
+          div.innerHTML = '<h4>Légende des types</h4>';
+          
+          // Ajouter un élément de légende pour chaque type
+          Object.entries(typeColors).forEach(([type, color]) => {
+            div.innerHTML += `
+              <div class="legend-item">
+                <span class="legend-color" style="background-color: ${color}"></span>
+                ${type}
+              </div>`;
+          });
+          
+          return div;
+        };
+        
+        legend.addTo(map);
+      }
+
+      // Charger les données
+      chargerEtAfficherDonnees();
+    }
+
+    // Appeler la fonction d'initialisation au chargement de la page
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  </script>
+</body>
+</html>

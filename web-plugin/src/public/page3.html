@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Atlas visualization plugin</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100vh; width: 100vw; }
+    .legend {
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+    .legend-item {
+      margin-bottom: 5px;
+    }
+    .legend-color {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .marker-cluster-custom {
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #000;
+    }
+    .marker-cluster-custom div {
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // Supabase client setup
+    const supabaseUrl = 'https://qidnzebmtbxhabtsprkx.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpZG56ZWJtdGJ4aGFidHNwcmt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NDQ3ODEsImV4cCI6MjA2NDQyMDc4MX0.IKCuSbFN0R3UVT6PBiOIWPly_hAuwgnc38FfmpmWbYM';
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Initialisation de la carte Leaflet
+    const map = L.map('map').setView([46.5, 2.5], 6); // Coordonnées et zoom initiaux
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Couleurs pour différents types
+    const typeColors = {};
+    const colorList = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf', '#999999'];
+    let colorIndex = 0;
+
+    // Cache des icônes pour éviter de les recréer
+    const iconCache = {};
+
+    // Création d'une icône personnalisée selon le type
+    function createCustomIcon(type) {
+      if (!type) type = 'default';
+      
+      // Si on a déjà créé une icône pour ce type, la réutiliser
+      if (iconCache[type]) return iconCache[type];
+
+      // Assigner une couleur au type s'il n'en a pas déjà une
+      if (!typeColors[type]) {
+        typeColors[type] = colorList[colorIndex % colorList.length];
+        colorIndex++;
+      }
+      
+      // Créer un élément SVG pour l'icône
+      const svgTemplate = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+          <circle cx="12" cy="12" r="10" fill="${typeColors[type]}" stroke="white" stroke-width="2"/>
+        </svg>
+      `;
+      
+      // Créer une URL data pour l'icône SVG
+      const svgUrl = 'data:image/svg+xml;base64,' + btoa(svgTemplate);
+      
+      // Créer et cacher l'icône
+      iconCache[type] = L.icon({
+        iconUrl: svgUrl,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -12]
+      });
+      
+      return iconCache[type];
+    }
+    
+    // Service de géocodage inverse pour déterminer le pays d'un point
+    async function reverseGeocode(lat, lng) {
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=5`);
+        const data = await response.json();
+        return data.address?.country || 'Inconnu';
+      } catch (error) {
+        console.error('Erreur de géocodage inverse:', error);
+        return 'Inconnu';
+      }
+    }
+
+    // Fonction pour créer un cluster personnalisé
+    function createClusterIcon(cluster) {
+      const count = cluster.getChildCount();
+      
+      // Créer l'élément HTML pour l'icône de cluster
+      return L.divIcon({
+        html: `<div class="marker-cluster-custom"><div>${count}</div></div>`,
+        className: 'marker-cluster-custom-wrapper',
+        iconSize: new L.Point(40, 40)
+      });
+    }
+
+    async function chargerEtAfficherDonnees() {
+      try {
+        // 1. Lire la table "typeatlas" pour obtenir la liste des noms de tables et leurs types
+        const { data: tablesInfo, error: errorTables } = await supabaseClient
+          .from('typeatlas')
+          .select('table_name, table_type');
+
+        if (errorTables) {
+          console.error('Erreur lors de la lecture de typeatlas:', errorTables.message);
+          alert('Erreur de chargement des types de tables: ' + errorTables.message);
+          return;
+        }
+
+        if (!tablesInfo || tablesInfo.length === 0) {
+          console.warn('Aucune table trouvée dans typeatlas.');
+          alert('Aucune table de données à afficher.');
+          return;
+        }
+
+        // Filtrer les tables et associer chaque table à son type
+        const tableConfigs = tablesInfo
+          .filter(info => info.table_name && info.table_name.trim() !== '' && info.table_name !== 'atlas2020')
+          .map(info => ({
+            name: info.table_name,
+            type: info.table_type || 'unknown'
+          }));
+
+        console.log('Tables à charger avec leurs types:', tableConfigs);
+        
+        // Création des groupes de clusters par pays
+        const countryClusters = {};
+        const allPoints = [];
+        
+        // 2. Pour chaque nom de table récupéré, lire les données
+        for (const tableConfig of tableConfigs) {
+          console.log(`Chargement des données pour la table: ${tableConfig.name} (type: ${tableConfig.type})`);
+          const { data: points, error: errorPoints } = await supabaseClient
+            .from(tableConfig.name)
+            .select('id, type, longitude, latitude');
+
+          if (errorPoints) {
+            console.error(`Erreur lors de la lecture de la table ${tableConfig.name}:`, errorPoints.message);
+            continue;
+          }
+
+          if (points && points.length > 0) {
+            // Collecter tous les points valides
+            points.forEach(point => {
+              if (typeof point.latitude === 'number' && typeof point.longitude === 'number') {
+                allPoints.push({
+                  ...point,
+                  tableConfig
+                });
+              } else {
+                console.warn(`Données de localisation invalides pour un point de la table ${tableConfig.name}:`, point);
+              }
+            });
+            console.log(`${points.length} points chargés pour ${tableConfig.name}`);
+          } else {
+            console.log(`Aucun point trouvé pour la table ${tableConfig.name}`);
+          }
+        }
+
+        // Création du groupe de clusters principal
+        const mainClusterGroup = L.markerClusterGroup({
+          maxClusterRadius: function(zoom) {
+            // À faible zoom, augmenter le rayon de clustering pour regrouper par pays
+            return zoom <= 4 ? 100 : 80;
+          },
+          iconCreateFunction: createClusterIcon
+        });
+
+        // Ajouter les marqueurs au groupe de clusters
+        for (const point of allPoints) {
+          const markerType = point.type || point.tableConfig.type;
+          const customIcon = createCustomIcon(markerType);
+          
+          const marker = L.marker([point.latitude, point.longitude], { icon: customIcon })
+            .bindPopup(
+              `<b>Table:</b> ${point.tableConfig.name}<br>
+               <b>Type:</b> ${markerType || 'N/A'}<br>
+               <b>ID:</b> ${point.id || 'N/A'}`
+            );
+          
+          mainClusterGroup.addLayer(marker);
+        }
+        
+        // Ajouter le groupe de clusters à la carte
+        map.addLayer(mainClusterGroup);
+        
+        // Ajouter une légende avec les différents types
+        if (Object.keys(typeColors).length > 0) {
+          createLegend();
+        }
+        
+        // Fonction pour mettre à jour les styles de cluster selon le niveau de zoom
+        map.on('zoomend', function() {
+          const currentZoom = map.getZoom();
+          if (currentZoom <= 4) {
+            // À petit zoom, grouper par pays
+            console.log('Regroupement par pays activé');
+          } else {
+            // À grand zoom, grouper par proximité
+            console.log('Affichage détaillé activé');
+          }
+        });
+        
+      } catch (error) {
+        console.error('Erreur générale lors du chargement des données:', error);
+        alert('Une erreur générale est survenue.');
+      }
+    }
+    
+    // Création d'une légende pour la carte
+    function createLegend() {
+      const legend = L.control({ position: 'bottomright' });
+      
+      legend.onAdd = function() {
+        const div = L.DomUtil.create('div', 'legend');
+        div.innerHTML = '<h4>Légende des types</h4>';
+        
+        // Ajouter un élément de légende pour chaque type
+        Object.entries(typeColors).forEach(([type, color]) => {
+          div.innerHTML += `
+            <div class="legend-item">
+              <span class="legend-color" style="background-color: ${color}"></span>
+              ${type}
+            </div>`;
+        });
+        
+        return div;
+      };
+      
+      legend.addTo(map);
+    }
+
+    // Appeler la fonction principale au chargement de la page
+    document.addEventListener('DOMContentLoaded', chargerEtAfficherDonnees);
+  </script>
+</body>
+</html>
