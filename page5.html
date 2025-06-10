@@ -74,7 +74,7 @@
       margin-right: 15px;
     }
     
-    .circle-icon svg {
+    .circle-icon img {
       width: 24px;
       height: 24px;
     }
@@ -165,7 +165,6 @@
     .checkbox-container {
       display: flex;
       align-items: center;
-      margin-left: 5px;
     }
     
     .color-swatch {
@@ -224,7 +223,7 @@
 <body>
   <div id="map"></div>
   
-  <!-- Bannière supérieure avec texte d'information -->
+  <!-- Bannière supérieure comme sur la capture d'écran -->
   <div class="top-banner">
     <div class="citation">
       <p>Click on the icons on the left to see different layers<br>
@@ -240,7 +239,7 @@
   
   <!-- Panneau latéral avec les contrôles -->
   <div class="side-panel">
-    <!-- Boutons circulaires -->
+    <!-- Boutons circulaires comme sur la capture d'écran -->
     <div class="control-item">
       <button class="circle-button" id="show-filter">
         <div class="circle-icon">
@@ -248,7 +247,7 @@
             <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
           </svg>
         </div>
-        <span class="button-text">Filter the data by barrier type, height class, barrier density, map type and boundaries</span>
+        <span class="button-text">Filter the data by barrier type, data source, barrier density, map type and boundaries</span>
       </button>
     </div>
     
@@ -259,7 +258,7 @@
             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
           </svg>
         </div>
-        <span class="button-text">Filter the data by ZHYD code</span>
+        <span class="button-text">Filter the data by Barrier Tracker app user</span>
       </button>
     </div>
     
@@ -274,7 +273,7 @@
       </button>
     </div>
     
-    <!-- Panneau de filtre -->
+    <!-- Panneau de filtre avec le style adapté -->
     <div class="filter-panel" id="filter-panel" style="display: none;">
       <h3>Filter the data</h3>
       
@@ -284,9 +283,9 @@
       </div>
       
       <div class="filter-section">
-        <label>Height class:</label>
+        <label>Data source:</label>
         <select id="data-source-filter">
-          <option value="">All height classes</option>
+          <option value="">All sources</option>
         </select>
       </div>
       
@@ -304,21 +303,21 @@
       <button class="submit-button" id="reset-filters" style="background-color: #f44336; margin-top: 10px;">Reset</button>
     </div>
     
-    <!-- Panneau de filtrage par ZHYD -->
+    <!-- Panneau de filtrage par utilisateur -->
     <div class="filter-panel" id="tracker-panel" style="display: none;">
-      <h3>Filter by ZHYD code</h3>
+      <h3>Filter by Barrier Tracker user</h3>
       
       <div class="filter-section">
-        <label>ZHYD code:</label>
+        <label>User:</label>
         <select id="user-filter">
-          <option value="">All codes</option>
+          <option value="">All users</option>
         </select>
       </div>
       
       <button class="submit-button" id="apply-user-filter">Apply filter</button>
     </div>
     
-    <!-- Formulaire de téléchargement -->
+    <!-- Formulaire de téléchargement avec style adapté -->
     <div class="download-form" id="download-form" style="display: none;">
       <h3>Download Data</h3>
       
@@ -425,13 +424,13 @@
         </svg>
       `;
       
-      // Encoder correctement en Base64 pour l'URL data
-      const svgBase64 = btoa(unescape(encodeURIComponent(svgTemplate)));
+      // Créer une URL data pour l'icône SVG
+      const svgUrl = 'data:image/svg+xml;base64,' + btoa(svgTemplate);
       
-      // Créer l'icône
+      // Créer et cacher l'icône
       iconCache[type] = L.icon({
-        iconUrl: 'data:image/svg+xml;base64,' + svgBase64,
-        iconSize: [20, 20],
+        iconUrl: svgUrl,
+        iconSize: [20, 20], // Taille plus petite pour coller à la capture d'écran
         iconAnchor: [10, 10],
         popupAnchor: [0, -10]
       });
@@ -455,56 +454,14 @@
       
       // Créer l'élément HTML pour l'icône de cluster
       return L.divIcon({
-        html: `<div class="marker-cluster-custom" style="background-color: ${backgroundColor};">${count}</div>`,
+        html: `<div class="marker-cluster-custom">${count}</div>`,
         className: '',
         iconSize: new L.Point(32, 32),
-        iconAnchor: [16, 16]
+        iconAnchor: [16, 16],
+        style: `background-color: ${backgroundColor};`
       });
     }
 
-    // Fonction pour générer des données de test si nécessaire
-    function genererDonneesTest() {
-      console.log("Generating test data because no data was found");
-      
-      // Points de test en France et en Europe
-      const pointsTest = [
-        { id: "T1", type: "dam", latitude: 48.8566, longitude: 2.3522, source: "HIGH", owner: "FR001" },
-        { id: "T2", type: "bridge", latitude: 45.7640, longitude: 4.8357, source: "LOW", owner: "FR002" },
-        { id: "T3", type: "culvert", latitude: 43.2965, longitude: 5.3698, source: "MEDIUM", owner: "FR003" },
-        { id: "T4", type: "weir", latitude: 47.2173, longitude: -1.5534, source: "HIGH", owner: "FR004" },
-        { id: "T5", type: "sluice", latitude: 44.8378, longitude: -0.5792, source: "LOW", owner: "FR005" },
-        { id: "T6", type: "dam", latitude: 50.8503, longitude: 4.3517, source: "MEDIUM", owner: "BE001" },
-        { id: "T7", type: "bridge", latitude: 52.3676, longitude: 4.9041, source: "HIGH", owner: "NL001" },
-        { id: "T8", type: "culvert", latitude: 51.5074, longitude: -0.1278, source: "LOW", owner: "UK001" },
-        { id: "T9", type: "weir", latitude: 48.2082, longitude: 16.3719, source: "MEDIUM", owner: "AT001" },
-        { id: "T10", type: "sluice", latitude: 41.9028, longitude: 12.4964, source: "HIGH", owner: "IT001" }
-      ];
-      
-      // Ajouter les points de test à allPoints
-      pointsTest.forEach(point => {
-        allPoints.push({
-          ...point,
-          tableConfig: { name: "test_data", type: point.type }
-        });
-      });
-      
-      // Créer la liste des types uniques pour le filtre
-      const uniqueTypes = [...new Set(allPoints.map(point => point.type))];
-      populateTypeFilters(uniqueTypes);
-      
-      // Créer la liste des sources de données uniques
-      const uniqueSources = [...new Set(allPoints.map(p => p.source))];
-      populateSourceFilters(uniqueSources);
-      
-      // Créer la liste des utilisateurs uniques
-      const uniqueUsers = [...new Set(allPoints.map(p => p.owner))];
-      populateUserFilters(uniqueUsers);
-      
-      // Afficher tous les points
-      displayFilteredPoints();
-    }
-
-    // Chargement et affichage des données
     async function chargerEtAfficherDonnees() {
       try {
         // 1. Lire la table "typeatlas" pour obtenir la liste des noms de tables et leurs types
@@ -515,14 +472,12 @@
         if (errorTables) {
           console.error('Erreur lors de la lecture de typeatlas:', errorTables.message);
           alert('Error loading table types: ' + errorTables.message);
-          genererDonneesTest();
           return;
         }
 
         if (!tablesInfo || tablesInfo.length === 0) {
           console.warn('Aucune table trouvée dans typeatlas.');
           alert('No data tables to display.');
-          genererDonneesTest();
           return;
         }
 
@@ -539,89 +494,45 @@
         // Réinitialiser les points
         allPoints = [];
         
-        // 2. Pour chaque nom de table récupéré, lire les données avec les colonnes adaptées
+        // 2. Pour chaque nom de table récupéré, lire les données
         for (const tableConfig of tableConfigs) {
           console.log(`Loading data for table: ${tableConfig.name} (type: ${tableConfig.type})`);
-          try {
-            // Utiliser les colonnes adaptées aux tables existantes
-            const { data: points, error: errorPoints } = await supabaseClient
-              .from(tableConfig.name)
-              .select('id, type, longitude, latitude, hclass, zhyd, rivername, height, basinname, country');
+          const { data: points, error: errorPoints } = await supabaseClient
+            .from(tableConfig.name)
+            .select('id, type, longitude, latitude, source, owner');
 
-            if (errorPoints) {
-              console.error(`Error reading table ${tableConfig.name}:`, errorPoints.message);
-              
-              // Essayer avec un ensemble minimal de colonnes
-              const { data: minimalPoints, error: minimalError } = await supabaseClient
-                .from(tableConfig.name)
-                .select('id, type, longitude, latitude');
-                
-              if (minimalError) {
-                console.error(`Error reading table ${tableConfig.name} with minimal columns:`, minimalError.message);
-                continue;
-              }
-              
-              if (minimalPoints && minimalPoints.length > 0) {
-                // Traiter les points minimaux
-                minimalPoints.forEach(point => {
-                  if (typeof point.latitude === 'number' && typeof point.longitude === 'number') {
-                    // Mapper les champs existants
-                    allPoints.push({
-                      ...point,
-                      source: null,
-                      owner: null,
-                      tableConfig
-                    });
-                  }
+          if (errorPoints) {
+            console.error(`Error reading table ${tableConfig.name}:`, errorPoints.message);
+            continue;
+          }
+
+          if (points && points.length > 0) {
+            // Collecter tous les points valides
+            points.forEach(point => {
+              if (typeof point.latitude === 'number' && typeof point.longitude === 'number') {
+                allPoints.push({
+                  ...point,
+                  tableConfig
                 });
-                console.log(`${minimalPoints.length} points loaded with minimal columns for ${tableConfig.name}`);
+              } else {
+                console.warn(`Invalid location data for point from table ${tableConfig.name}:`, point);
               }
-              continue;
-            }
-
-            if (points && points.length > 0) {
-              // Collecter tous les points valides
-              points.forEach(point => {
-                if (typeof point.latitude === 'number' && typeof point.longitude === 'number') {
-                  // Adapter les points pour qu'ils aient une structure cohérente avec le reste du code
-                  allPoints.push({
-                    ...point,
-                    // Utiliser hclass comme source et zhyd comme owner
-                    source: point.hclass,  
-                    owner: point.zhyd,
-                    tableConfig
-                  });
-                } else {
-                  console.warn(`Invalid location data for point from table ${tableConfig.name}:`, point);
-                }
-              });
-              console.log(`${points.length} points loaded for ${tableConfig.name}`);
-            } else {
-              console.log(`No points found for table ${tableConfig.name}`);
-            }
-          } catch (tableError) {
-            console.error(`Error processing table ${tableConfig.name}:`, tableError);
+            });
+            console.log(`${points.length} points loaded for ${tableConfig.name}`);
+          } else {
+            console.log(`No points found for table ${tableConfig.name}`);
           }
         }
 
-        // Si aucun point n'a été chargé, générer des données de test
-        if (allPoints.length === 0) {
-          console.warn("No points loaded from any table, generating test data");
-          genererDonneesTest();
-          return;
-        }
-        
-        console.log(`Total points loaded: ${allPoints.length}`);
-        
         // Créer la liste des types uniques pour le filtre
         const uniqueTypes = [...new Set(allPoints.map(point => point.type || point.tableConfig.type))];
         populateTypeFilters(uniqueTypes);
         
-        // Créer la liste des sources de données uniques (maintenant basées sur hclass)
+        // Créer la liste des sources de données uniques
         const uniqueSources = [...new Set(allPoints.filter(p => p.source).map(p => p.source))];
         populateSourceFilters(uniqueSources);
         
-        // Créer la liste des utilisateurs uniques (maintenant basées sur zhyd)
+        // Créer la liste des utilisateurs uniques
         const uniqueUsers = [...new Set(allPoints.filter(p => p.owner).map(p => p.owner))];
         populateUserFilters(uniqueUsers);
 
@@ -630,12 +541,10 @@
         
       } catch (error) {
         console.error('General error while loading data:', error);
-        alert('A general error occurred while loading data.');
-        genererDonneesTest();
+        alert('A general error occurred.');
       }
     }
     
-    // Remplissage des filtres avec les données disponibles
     function populateTypeFilters(types) {
       const container = document.getElementById('barrier-type-filters');
       container.innerHTML = '';
@@ -644,13 +553,13 @@
         const div = document.createElement('div');
         div.className = 'filter-option';
         
+        const checkboxContainer = document.createElement('div');
+        checkboxContainer.className = 'checkbox-container';
+        
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.id = `type-${type}`;
         checkbox.value = type;
-        
-        const checkboxContainer = document.createElement('div');
-        checkboxContainer.className = 'checkbox-container';
         
         const colorSwatch = document.createElement('span');
         colorSwatch.className = 'color-swatch';
@@ -671,33 +580,28 @@
     
     function populateSourceFilters(sources) {
       const select = document.getElementById('data-source-filter');
-      select.innerHTML = '<option value="">All height classes</option>';
+      select.innerHTML = '<option value="">All sources</option>';
       
       sources.forEach(source => {
-        if (source) {
-          const option = document.createElement('option');
-          option.value = source;
-          option.textContent = source;
-          select.appendChild(option);
-        }
+        const option = document.createElement('option');
+        option.value = source;
+        option.textContent = source;
+        select.appendChild(option);
       });
     }
     
     function populateUserFilters(users) {
       const select = document.getElementById('user-filter');
-      select.innerHTML = '<option value="">All ZHYD codes</option>';
+      select.innerHTML = '<option value="">All users</option>';
       
       users.forEach(user => {
-        if (user) {
-          const option = document.createElement('option');
-          option.value = user;
-          option.textContent = user;
-          select.appendChild(option);
-        }
+        const option = document.createElement('option');
+        option.value = user;
+        option.textContent = user;
+        select.appendChild(option);
       });
     }
     
-    // Affichage des points filtrés sur la carte
     function displayFilteredPoints() {
       // Si un groupe de clusters existe déjà, le supprimer
       if (mainClusterGroup) {
@@ -724,12 +628,12 @@
           return false;
         }
         
-        // Filtre par source (maintenant hclass)
+        // Filtre par source
         if (activeFilters.source && point.source !== activeFilters.source) {
           return false;
         }
         
-        // Filtre par utilisateur (maintenant zhyd)
+        // Filtre par utilisateur
         if (activeFilters.user && point.owner !== activeFilters.user) {
           return false;
         }
@@ -745,8 +649,6 @@
         return true;
       });
       
-      console.log(`Displaying ${filteredPoints.length} points after filtering`);
-      
       // Ajouter les marqueurs au groupe de clusters
       filteredPoints.forEach(point => {
         const markerType = point.type || point.tableConfig.type;
@@ -759,27 +661,11 @@
         `;
         
         if (point.source) {
-          popupContent += `<div><strong>Height Class:</strong> ${point.source}</div>`;
+          popupContent += `<div><strong>Source:</strong> ${point.source}</div>`;
         }
         
         if (point.owner) {
-          popupContent += `<div><strong>ZHYD Code:</strong> ${point.owner}</div>`;
-        }
-        
-        if (point.rivername) {
-          popupContent += `<div><strong>River:</strong> ${point.rivername}</div>`;
-        }
-        
-        if (point.basinname) {
-          popupContent += `<div><strong>Basin:</strong> ${point.basinname}</div>`;
-        }
-        
-        if (point.height) {
-          popupContent += `<div><strong>Height:</strong> ${point.height}</div>`;
-        }
-        
-        if (point.country) {
-          popupContent += `<div><strong>Country:</strong> ${point.country}</div>`;
+          popupContent += `<div><strong>Added by:</strong> ${point.owner}</div>`;
         }
         
         popupContent += '</div>';
