@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Atlas visualization plugin</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100vh; width: 100vw; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+
+
+    // Supabase client setup
+const supabaseUrl = 'https://qidnzebmtbxhabtsprkx.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpZG56ZWJtdGJ4aGFidHNwcmt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NDQ3ODEsImV4cCI6MjA2NDQyMDc4MX0.IKCuSbFN0R3UVT6PBiOIWPly_hAuwgnc38FfmpmWbYM';
+
+
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey); // Modifié ici
+
+    // Initialisation de la carte Leaflet
+    const map = L.map('map').setView([46.5, 2.5], 6); // Coordonnées et zoom initiaux
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    async function chargerEtAfficherDonnees() {
+      try {
+        // 1. Lire la table "typeatlas" pour obtenir la liste des noms de tables
+        const { data: tablesInfo, error: errorTables } = await supabaseClient  
+          .from('typeatlas')
+          .select('table_name');  
+
+        if (errorTables) {
+          console.error('Erreur lors de la lecture de typeatlas:', errorTables.message);
+          alert('Erreur de chargement des types de tables: ' + errorTables.message);
+          return;
+        }
+
+        if (!tablesInfo || tablesInfo.length === 0) {
+          console.warn('Aucune table trouvée dans typeatlas.');
+          alert('Aucune table de données à afficher.');
+          return;
+        }
+
+        const tableNames = tablesInfo
+          .map(row => row.table_name)
+          .filter(name => name && name.trim() !== '' && name !== 'atlas2020'); // Exclure 'atlas2020' et les noms vides
+
+        console.log('Tables à charger:', tableNames);
+
+        // 2. Pour chaque nom de table récupéré, lire les données et les afficher
+        for (const tableName of tableNames) {
+          console.log(`Chargement des données pour la table: ${tableName}`);
+          const { data: points, error: errorPoints } = await supabaseClient // Modifié ici
+            .from(tableName)
+            .select('id, type, longitude, latitude'); // Champs à récupérer
+
+          if (errorPoints) {
+            console.error(`Erreur lors de la lecture de la table ${tableName}:`, errorPoints.message);
+            // Continuer avec les autres tables même si une échoue
+            continue;
+          }
+
+          if (points && points.length > 0) {
+            points.forEach(point => {
+              // Vérifier que la latitude et la longitude sont valides
+              if (typeof point.latitude === 'number' && typeof point.longitude === 'number') {
+                L.marker([point.latitude, point.longitude])
+                  .addTo(map)
+                  .bindPopup(
+                    `<b>Table:</b> ${tableName}<br>
+                     <b>Type:</b> ${point.type || 'N/A'}<br>
+                     <b>ID:</b> ${point.id || 'N/A'}`
+                  );
+              } else {
+                console.warn(`Données de localisation invalides pour un point de la table ${tableName}:`, point);
+              }
+            });
+            console.log(`${points.length} points chargés pour ${tableName}`);
+          } else {
+            console.log(`Aucun point trouvé pour la table ${tableName}`);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur générale lors du chargement des données:', error);
+        alert('Une erreur générale est survenue.');
+      }
+    }
+
+    // Appeler la fonction principale au chargement de la page
+    document.addEventListener('DOMContentLoaded', chargerEtAfficherDonnees);
+  </script>
+</body>
+</html>
