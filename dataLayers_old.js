@@ -52,9 +52,9 @@ class RiverStructureLayer {
             <div class="structure-popup">
                 <h3>${structure.name}</h3>
                 <p><strong>Type:</strong> ${structure.type}</p>
-                <p><strong>Rivière:</strong> ${structure.river}</p>
-                <p><strong>Hauteur:</strong> ${structure.height || 'N/A'} m</p>
-                <p><strong>Année:</strong> ${structure.year || 'N/A'}</p>
+                <p><strong>River:</strong> ${structure.river}</p>
+                <p><strong>Height:</strong> ${structure.height || 'N/A'} m</p>
+                <p><strong>Year:</strong> ${structure.year || 'N/A'}</p>
             </div>
         `;
     }
