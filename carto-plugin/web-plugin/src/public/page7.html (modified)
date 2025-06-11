@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Atlas visualization plugin</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="styles/map-controls.css" />
+  <style>
+    html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
+    #map { height: 100vh; width: 100vw; }
+    /* Existing styles omitted for brevity */
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  
+  <!-- Bannière supérieure avec texte d'information -->
+  <div class="top-banner">
+    <div class="citation">
+      <p>Click on the icons on the left to see different layers<br>
+      on the map filtered by barriers, countries and much more!<br>
+      Or download all data from the Atlas data base.</p>
+      
+      <p><strong>When using the Barrier Atlas data please use this citation:</strong><br>
+      AMBER Consortium (2020). The AMBER Barrier Atlas.<br>
+      A Pan-European database of artificial instream barriers. Version 1.0<br>
+      June 29th 2020. https://amber.international/european-barrier-atlas/</p>
+    </div>
+  </div>
+  
+  <!-- Panneau latéral avec les contrôles -->
+  <div class="side-panel">
+    <!-- Existing controls omitted for brevity -->
+    
+    <!-- New toggle buttons for map view -->
+    <div class="control-item">
+      <button class="circle-button" id="toggle-view">
+        <div class="circle-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#777">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+          </svg>
+        </div>
+        <span class="button-text">Toggle Street/Satellite View</span>
+      </button>
+    </div>
+    
+    <!-- Existing filter panels omitted for brevity -->
+  </div>
+  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="js/map-layers.js"></script>
+  <script>
+    // Supabase client setup
+    const supabaseUrl = 'https://qidnzebmtbxhabtsprkx.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpZG56ZWJtdGJ4aGFidHNwcmt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NDQ3ODEsImV4cCI6MjA2NDQyMDc4MX0.IKCuSbFN0R3UVT6PBiOIWPly_hAuwgnc38FfmpmWbYM';
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Initialisation de la carte Leaflet
+    const map = L.map('map').setView([46.5, 2.5], 6); // Coordonnées et zoom initiaux
+    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    const satelliteLayer = L.tileLayer('https://{s}.google.com/vt?x={x}&y={y}&z={z}&s=Ga', {
+      attribution: '&copy; <a href="https://www.google.com/intl/en_us/help/terms_maps.html">Google</a>',
+      maxZoom: 20
+    });
+
+    let currentLayer = streetLayer;
+
+    document.getElementById('toggle-view').addEventListener('click', function() {
+      if (map.hasLayer(currentLayer)) {
+        map.removeLayer(currentLayer);
+        currentLayer = (currentLayer === streetLayer) ? satelliteLayer : streetLayer;
+        map.addLayer(currentLayer);
+      }
+    });
+
+    // Existing code omitted for brevity
+  </script>
+</body>
+</html>

@@ -91,6 +91,9 @@
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      width: 650px; /* Plus large que les 260px par défaut */
+      max-width: 90vw; /* Pour s'assurer qu'il reste visible sur mobile */
+      box-sizing: border-box;
     }
     
     .download-form h3 {
@@ -99,6 +102,21 @@
       border-bottom: 1px solid #eee;
       padding-bottom: 10px;
       margin-bottom: 15px;
+    }
+    
+    .download-form p {
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .form-col {
+      flex: 1;
     }
     
     .form-field {
@@ -300,8 +318,17 @@
         </div>
       </div>
       
+      <div class="filter-section">
+        <label>Map Type:</label>
+        <select id="map-type-selector">
+          <option value="street">Street Map</option>
+          <option value="satellite">Satellite</option>
+        </select>
+      </div>
+      
       <button class="submit-button" id="apply-filters">Apply filters</button>
       <button class="submit-button" id="reset-filters" style="background-color: #f44336; margin-top: 10px;">Reset</button>
+      <button class="submit-button" id="abort-filters" style="background-color: #FF8C00; margin-top: 10px;">Close</button>
     </div>
     
     <!-- Panneau de filtrage par ZHYD -->
@@ -316,13 +343,14 @@
       </div>
       
       <button class="submit-button" id="apply-user-filter">Apply filter</button>
+      <button class="submit-button" id="abort-tracker-filter" style="background-color: #FF8C00; margin-top: 10px;">Close</button>
     </div>
     
-    <!-- Formulaire de téléchargement -->
-    <div class="download-form" id="download-form" style="display: none;">
+    <!-- Formulaire de téléchargement restructuré -->
+    <div class="download-form" id="download-form" style="display: none; width: 380px; max-width: 90vw;">
       <h3>Download Data</h3>
       
-      <p>To download the data please enter your details below and press continue</p>
+      <p style="margin-bottom: 10px; line-height: 1.3;">To download the data please enter your details below and press continue</p>
       
       <form id="data-download-form">
         <div class="form-field">
@@ -345,14 +373,17 @@
           </select>
         </div>
         
-        <div class="form-field">
-          <label for="first-name">First Name:</label>
-          <input type="text" id="first-name">
-        </div>
-        
-        <div class="form-field">
-          <label for="last-name">Last Name:</label>
-          <input type="text" id="last-name">
+        <!-- Organisation en deux colonnes pour prénom et nom -->
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+          <div style="flex: 1;">
+            <label for="first-name">First Name:</label>
+            <input type="text" id="first-name" style="width: 100%;">
+          </div>
+          
+          <div style="flex: 1;">
+            <label for="last-name">Last Name:</label>
+            <input type="text" id="last-name" style="width: 100%;">
+          </div>
         </div>
         
         <div class="form-field">
@@ -360,13 +391,28 @@
           <input type="text" id="organization">
         </div>
         
-        <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
-          By providing your email you agree that the AMBER project can contact you with news and updates on the project.<br><br>
-          You will be able to unsubscribe from any emails at any time should you not wish to receive further information. Your details will not be shared with any other organisations outside the AMBER project.
+        <p style="font-size: 12px; color: #666; margin-bottom: 15px; line-height: 1.2;">
+          By providing your email you agree that the AMBER project can contact you with news and updates on the project.
+          You will be able to unsubscribe from any emails at any time should you not wish to receive further information. 
+          Your details will not be shared with any other organisations outside the AMBER project.
         </p>
         
-        <button type="submit" class="submit-button">Continue</button>
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="submit-button" style="flex: 1;">Continue</button>
+          <button type="button" id="abort-download" class="submit-button" style="flex: 1; background-color: #FF8C00;">Close</button>
+        </div>
       </form>
+    </div>
+    
+    <!-- Panneau de sélection du type de carte toujours visible -->
+    <div class="control-item" style="margin-top: 15px;">
+      <div style="padding: 15px; background-color: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #555;">Map Type</label>
+        <select id="map-type-selector-visible" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+          <option value="street">Street Map</option>
+          <option value="satellite">Satellite</option>
+        </select>
+      </div>
     </div>
   </div>
   
@@ -379,13 +425,28 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpZG56ZWJtdGJ4aGFidHNwcmt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NDQ3ODEsImV4cCI6MjA2NDQyMDc4MX0.IKCuSbFN0R3UVT6PBiOIWPly_hAuwgnc38FfmpmWbYM';
     const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // Initialisation de la carte Leaflet
-    const map = L.map('map').setView([46.5, 2.5], 6); // Coordonnées et zoom initiaux
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    // Définition des différentes couches de carte
+const baseMaps = {
+  "Street": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }),
+  "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '&copy; <a href="https://www.esri.com/">Esri</a>',
+    maxZoom: 19
+  })
+};
 
-    // Couleurs pour différents types
+// Initialisation de la carte avec la couche Street par défaut
+const map = L.map('map', {
+  center: [46.5, 2.5],
+  zoom: 6,
+  layers: [baseMaps.Street]
+}).setView([46.5, 2.5], 6);
+
+// Ajout du contrôle de couches en haut à droite de la carte
+L.control.layers(baseMaps, null, {position: 'topright'}).addTo(map);
+
+// Couleurs pour différents types
     const typeColors = {};
     const colorList = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf', '#999999'];
     let colorIndex = 0;
@@ -405,39 +466,42 @@
     // Groupe de clusters principal
     let mainClusterGroup = null;
 
-    // Création d'une icône personnalisée selon le type
-    function createCustomIcon(type) {
-      if (!type) type = 'default';
-      
-      // Si on a déjà créé une icône pour ce type, la réutiliser
-      if (iconCache[type]) return iconCache[type];
+ 
+// Création d'une icône personnalisée en forme de diamant selon le type
+function createCustomIcon(type) {
+  if (!type) type = 'default';
+  
+  // Si on a déjà créé une icône pour ce type, la réutiliser
+  if (iconCache[type]) return iconCache[type];
 
-      // Assigner une couleur au type s'il n'en a pas déjà une
-      if (!typeColors[type]) {
-        typeColors[type] = colorList[colorIndex % colorList.length];
-        colorIndex++;
-      }
-      
-      // Créer un élément SVG pour l'icône
-      const svgTemplate = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-          <circle cx="12" cy="12" r="10" fill="${typeColors[type]}" stroke="white" stroke-width="2"/>
-        </svg>
-      `;
-      
-      // Encoder correctement en Base64 pour l'URL data
-      const svgBase64 = btoa(unescape(encodeURIComponent(svgTemplate)));
-      
-      // Créer l'icône
-      iconCache[type] = L.icon({
-        iconUrl: 'data:image/svg+xml;base64,' + svgBase64,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
-        popupAnchor: [0, -10]
-      });
-      
-      return iconCache[type];
-    }
+  // Assigner une couleur au type s'il n'en a pas déjà une
+  if (!typeColors[type]) {
+    typeColors[type] = colorList[colorIndex % colorList.length];
+    colorIndex++;
+  }
+  
+  // Créer un élément SVG pour l'icône en forme de diamant
+  const svgTemplate = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+      <polygon points="12,2 22,12 12,22 2,12" fill="${typeColors[type]}" stroke="white" stroke-width="2"/>
+    </svg>
+  `;
+  
+  // Encoder correctement en Base64 pour l'URL data
+  const svgBase64 = btoa(unescape(encodeURIComponent(svgTemplate)));
+  
+  // Créer l'icône
+  iconCache[type] = L.icon({
+    iconUrl: 'data:image/svg+xml;base64,' + svgBase64,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -12]
+  });
+  
+  return iconCache[type];
+}
+    
+
     
     // Fonction pour créer un cluster personnalisé
     function createClusterIcon(cluster) {
@@ -466,7 +530,8 @@
     function genererDonneesTest() {
       console.log("Generating test data because no data was found");
       
-      // Points de test en France et en Europe
+      // Points de test en France et en Europe => il faut garder la notion de owner sous le coude pour filter ultérieurement 
+      // selon le nom ou l'email des utilisateurs
       const pointsTest = [
         { id: "T1", type: "dam", latitude: 48.8566, longitude: 2.3522, source: "HIGH", owner: "FR001" },
         { id: "T2", type: "bridge", latitude: 45.7640, longitude: 4.8357, source: "LOW", owner: "FR002" },
@@ -635,39 +700,53 @@
       }
     }
     
-    // Remplissage des filtres avec les données disponibles
-    function populateTypeFilters(types) {
-      const container = document.getElementById('barrier-type-filters');
-      container.innerHTML = '';
-      
-      types.forEach(type => {
-        const div = document.createElement('div');
-        div.className = 'filter-option';
-        
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.id = `type-${type}`;
-        checkbox.value = type;
-        
-        const checkboxContainer = document.createElement('div');
-        checkboxContainer.className = 'checkbox-container';
-        
-        const colorSwatch = document.createElement('span');
-        colorSwatch.className = 'color-swatch';
-        colorSwatch.style.backgroundColor = typeColors[type] || '#999';
-        
-        const label = document.createElement('label');
-        label.htmlFor = `type-${type}`;
-        label.textContent = type;
-        
-        checkboxContainer.appendChild(colorSwatch);
-        checkboxContainer.appendChild(label);
-        
-        div.appendChild(checkbox);
-        div.appendChild(checkboxContainer);
-        container.appendChild(div);
-      });
-    }
+
+// Remplissage des filtres avec les données disponibles
+function populateTypeFilters(types) {
+  const container = document.getElementById('barrier-type-filters');
+  container.innerHTML = '';
+  
+  types.forEach(type => {
+    const div = document.createElement('div');
+    div.className = 'filter-option';
+    
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = `type-${type}`;
+    checkbox.value = type;
+    
+    const checkboxContainer = document.createElement('div');
+    checkboxContainer.className = 'checkbox-container';
+    
+    // Remplacer le span par un SVG en forme de diamant
+    const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgElement.setAttribute('width', '16');
+    svgElement.setAttribute('height', '16');
+    svgElement.setAttribute('viewBox', '0 0 16 16');
+    svgElement.style.display = 'inline-block';
+    svgElement.style.verticalAlign = 'middle';
+    svgElement.style.marginRight = '8px';
+    
+    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    polygon.setAttribute('points', '8,1 15,8 8,15 1,8');
+    polygon.setAttribute('fill', typeColors[type] || '#999');
+    polygon.setAttribute('stroke', 'black');
+    polygon.setAttribute('stroke-width', '1');
+    
+    svgElement.appendChild(polygon);
+    
+    const label = document.createElement('label');
+    label.htmlFor = `type-${type}`;
+    label.textContent = type;
+    
+    checkboxContainer.appendChild(svgElement);
+    checkboxContainer.appendChild(label);
+    
+    div.appendChild(checkbox);
+    div.appendChild(checkboxContainer);
+    container.appendChild(div);
+  });
+}
     
     function populateSourceFilters(sources) {
       const select = document.getElementById('data-source-filter');
@@ -802,34 +881,37 @@
       document.getElementById('density-value').textContent = activeFilters.density;
     }
     
-    // Création d'une légende pour la carte
-    function createLegend() {
-      // Supprimer la légende existante si elle existe
-      const existingLegend = document.querySelector('.legend');
-      if (existingLegend) {
-        existingLegend.remove();
-      }
-      
-      const legend = L.control({ position: 'bottomright' });
-      
-      legend.onAdd = function() {
-        const div = L.DomUtil.create('div', 'legend');
-        div.innerHTML = '<h4>Barrier types</h4>';
-        
-        // Ajouter un élément de légende pour chaque type
-        Object.entries(typeColors).forEach(([type, color]) => {
-          div.innerHTML += `
-            <div class="legend-item">
-              <span class="legend-color" style="background-color: ${color}"></span>
-              ${type}
-            </div>`;
-        });
-        
-        return div;
-      };
-      
-      legend.addTo(map);
-    }
+
+    // Création d'une légende pour la carte avec des marqueurs en forme de diamant
+function createLegend() {
+  // Supprimer la légende existante si elle existe
+  const existingLegend = document.querySelector('.legend');
+  if (existingLegend) {
+    existingLegend.remove();
+  }
+  
+  const legend = L.control({ position: 'bottomright' });
+  
+ legend.onAdd = function() {
+  const div = L.DomUtil.create('div', 'legend');
+  div.innerHTML = '<h4>Barrier types</h4>';
+  
+  // Ajouter un élément de légende pour chaque type avec forme en diamant
+  Object.entries(typeColors).forEach(([type, color]) => {
+    div.innerHTML += `
+      <div class="legend-item">
+        <svg width="16" height="16" viewBox="0 0 16 16" style="display: inline-block; vertical-align: middle; margin-right: 5px;">
+          <polygon points="8,1 15,8 8,15 1,8" fill="${color}" stroke="black" stroke-width="1"/>
+        </svg>
+        ${type}
+      </div>`;
+  });
+  
+  return div;
+};
+  
+  legend.addTo(map);
+}
     
     // Gestion des événements UI
     document.addEventListener('DOMContentLoaded', function() {
@@ -925,6 +1007,58 @@
         
         alert('Thank you! Your download will begin shortly. You will also receive an email with the download link.');
       });
+      
+      document.getElementById('map-type-selector').addEventListener('change', function() {
+        if (this.value === 'street') {
+          if (!map.hasLayer(baseMaps.Street)) {
+            map.removeLayer(baseMaps.Satellite);
+            map.addLayer(baseMaps.Street);
+          }
+        } else if (this.value === 'satellite') {
+          if (!map.hasLayer(baseMaps.Satellite)) {
+            map.removeLayer(baseMaps.Street);
+            map.addLayer(baseMaps.Satellite);
+          }
+        }
+      });
+      
+      // Ajouter cet écouteur d'événement au sélecteur visible
+document.getElementById('map-type-selector-visible').addEventListener('change', function() {
+  // Synchroniser les deux sélecteurs
+  document.getElementById('map-type-selector').value = this.value;
+  
+  if (this.value === 'street') {
+    if (!map.hasLayer(baseMaps.Street)) {
+      map.removeLayer(baseMaps.Satellite);
+      map.addLayer(baseMaps.Street);
+    }
+  } else if (this.value === 'satellite') {
+    if (!map.hasLayer(baseMaps.Satellite)) {
+      map.removeLayer(baseMaps.Street);
+      map.addLayer(baseMaps.Satellite);
+    }
+  }
+});
+      
+      // Dans la fonction DOMContentLoaded avec les autres écouteurs d'événements
+document.getElementById('abort-download').addEventListener('click', function() {
+  // Fermer le panneau de téléchargement
+  document.getElementById('download-form').style.display = 'none';
+  
+  // Réinitialiser les champs du formulaire
+  document.getElementById('data-download-form').reset();
+});
+
+// Ajouter ces écouteurs d'événements dans le bloc DOMContentLoaded
+document.getElementById('abort-filters').addEventListener('click', function() {
+  // Fermer le panneau de filtres
+  document.getElementById('filter-panel').style.display = 'none';
+});
+
+document.getElementById('abort-tracker-filter').addEventListener('click', function() {
+  // Fermer le panneau de filtrage par ZHYD
+  document.getElementById('tracker-panel').style.display = 'none';
+});
     });
   </script>
 </body>
