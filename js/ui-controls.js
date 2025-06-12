@@ -66,8 +66,25 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Appliquer le filtre utilisateur
   document.getElementById('apply-user-filter').addEventListener('click', function() {
-    activeFilters.user = document.getElementById('user-filter').value;
+    // Vérifier d'abord l'entrée manuelle, puis la liste déroulante si l'entrée est vide
+    let selectedZHYD = document.getElementById('user-filter-input').value.trim();
+    
+    // Si l'entrée manuelle est vide, utiliser la valeur de la liste déroulante
+    if (!selectedZHYD) {
+      selectedZHYD = document.getElementById('user-filter-select').value;
+    }
+    
+    // Appliquer le filtre
+    activeFilters.user = selectedZHYD;
     displayFilteredPoints();
+  });
+  
+  // Synchronisation entre la liste déroulante et le champ de saisie
+  document.getElementById('user-filter-select').addEventListener('change', function() {
+    // Si l'utilisateur sélectionne un code dans la liste, effacer le champ de saisie manuelle
+    if (this.value) {
+      document.getElementById('user-filter-input').value = '';
+    }
   });
   
   // Fermer le panneau de filtrage par ZHYD

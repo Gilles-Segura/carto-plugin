@@ -73,7 +73,7 @@ function populateSourceFilters(sources) {
 
 // Remplissage des filtres d'utilisateurs (ZHYD codes)
 function populateUserFilters(users) {
-  const userSelect = document.getElementById('user-filter');
+  const userSelect = document.getElementById('user-filter-select');
   userSelect.innerHTML = '<option value="">All ZHYD codes</option>';
   
   // Trier les codes ZHYD pour une meilleure lisibilité

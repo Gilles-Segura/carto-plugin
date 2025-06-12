@@ -98,11 +98,16 @@
       <h3>Filter by ZHYD code</h3>
       
       <div class="filter-section">
-        <label for="user-filter">Select ZHYD code:</label>
-        <select id="user-filter" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        <label for="user-filter-select">Select from existing codes:</label>
+        <select id="user-filter-select" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px;">
           <option value="">All ZHYD codes</option>
           <!-- Les options seront ajoutées dynamiquement ici -->
         </select>
+      </div>
+      
+      <div class="filter-section">
+        <label for="user-filter-input">Or enter code manually:</label>
+        <input type="text" id="user-filter-input" placeholder="e.g. X123456789" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
       </div>
       
       <button class="submit-button" id="apply-user-filter">Apply filter</button>
