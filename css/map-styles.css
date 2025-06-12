@@ -1,0 +1,167 @@
+html, body { 
+  height: 100%; 
+  margin: 0; 
+  font-family: Arial, sans-serif; 
+}
+
+#map { 
+  height: 100vh; 
+  width: 100vw; 
+}
+
+/* Styles pour les panneaux de contrôle */
+.top-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(135, 206, 235, 0.9);
+  color: white;
+  padding: 15px 20px;
+  z-index: 1000;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.citation {
+  max-width: 800px;
+  margin: 0 auto;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.side-panel {
+  position: absolute;
+  top: 80px;
+  left: 20px;
+  z-index: 1000;
+  width: 260px;
+}
+
+.control-item {
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+.circle-button {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  padding: 15px;
+  cursor: pointer;
+  width: 100%;
+  border: none;
+  text-align: left;
+}
+
+.circle-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+}
+
+.button-text {
+  font-weight: bold;
+  color: #555;
+}
+
+/* Styles pour les panneaux de filtres */
+.filter-panel, .tracker-panel, .download-form {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.filter-section {
+  margin-bottom: 20px;
+}
+
+.filter-section label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #555;
+}
+
+.filter-option {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+}
+
+.submit-button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Styles pour la légende */
+.legend {
+  padding: 10px;
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+}
+
+.legend h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+}
+
+.legend-item {
+  margin-bottom: 5px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+
+/* Styles pour le formulaire */
+.form-field {
+  margin-bottom: 15px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555;
+}
+
+.form-field input, .form-field select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Styles spécifiques aux inputs */
+input[type="range"] {
+  width: 100%;
+}
+
+select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
