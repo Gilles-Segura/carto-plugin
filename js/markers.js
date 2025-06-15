@@ -112,37 +112,130 @@ function displayFilteredPoints() {
     const markerType = point.type || point.tableConfig.type;
     const customIcon = createCustomIcon(markerType);
     
+    // Popup avec style amélioré et contenu plus complet
     let popupContent = `
-      <div style="font-family: Arial, sans-serif; font-size: 13px;">
-        <h4 style="margin: 0 0 8px 0;">${point.id || 'Barrier'}</h4>
-        <div><strong>Type:</strong> ${markerType || 'N/A'}</div>
+      <div class="barrier-popup">
+        <h3>${point.id || 'Barrier'}</h3>
+        <table class="barrier-details">
+          <tr>
+            <td><strong>Type:</strong></td>
+            <td>${markerType || 'N/A'}</td>
+          </tr>
     `;
     
+    // Ajouter toutes les propriétés disponibles
     if (point.source) {
-      popupContent += `<div><strong>Height Class:</strong> ${point.source}</div>`;
+      popupContent += `
+        <tr>
+          <td><strong>Height Class:</strong></td>
+          <td>${point.source}</td>
+        </tr>
+      `;
     }
     
     if (point.owner) {
-      popupContent += `<div><strong>ZHYD Code:</strong> ${point.owner}</div>`;
+      popupContent += `
+        <tr>
+          <td><strong>ZHYD Code:</strong></td>
+          <td>${point.owner}</td>
+        </tr>
+      `;
     }
     
     if (point.rivername) {
-      popupContent += `<div><strong>River:</strong> ${point.rivername}</div>`;
+      popupContent += `
+        <tr>
+          <td><strong>River:</strong></td>
+          <td>${point.rivername}</td>
+        </tr>
+      `;
     }
     
     if (point.basinname) {
-      popupContent += `<div><strong>Basin:</strong> ${point.basinname}</div>`;
+      popupContent += `
+        <tr>
+          <td><strong>Basin:</strong></td>
+          <td>${point.basinname}</td>
+        </tr>
+      `;
     }
     
     if (point.height) {
-      popupContent += `<div><strong>Height:</strong> ${point.height}</div>`;
+      popupContent += `
+        <tr>
+          <td><strong>Height:</strong></td>
+          <td>${point.height} m</td>
+        </tr>
+      `;
     }
     
     if (point.country) {
-      popupContent += `<div><strong>Country:</strong> ${point.country}</div>`;
+      popupContent += `
+        <tr>
+          <td><strong>Country:</strong></td>
+          <td>${point.country}</td>
+        </tr>
+      `;
     }
     
-    popupContent += `</div>`;
+    // Ajouter les coordonnées
+    popupContent += `
+        <tr>
+          <td><strong>Coordinates:</strong></td>
+          <td>${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}</td>
+        </tr>
+      </table>
+      
+      <div class="barrier-actions">
+        <button onclick="map.setView([${point.latitude}, ${point.longitude}], 18)">Zoom</button>
+      </div>
+    </div>
+    `;
+    
+    // Ajouter le style CSS directement dans le HTML
+    popupContent += `
+      <style>
+        .barrier-popup {
+          font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+          padding: 5px;
+          max-width: 300px;
+        }
+        .barrier-popup h3 {
+          margin: 0 0 10px 0;
+          padding-bottom: 5px;
+          border-bottom: 1px solid #ddd;
+          font-size: 16px;
+          color: #333;
+        }
+        .barrier-details {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 12px;
+        }
+        .barrier-details td {
+          padding: 3px;
+          font-size: 13px;
+        }
+        .barrier-details tr:nth-child(even) {
+          background-color: #f5f5f5;
+        }
+        .barrier-actions {
+          text-align: center;
+        }
+        .barrier-actions button {
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          padding: 5px 10px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 12px;
+        }
+        .barrier-actions button:hover {
+          background-color: #45a049;
+        }
+      </style>
+    `;
     
     const marker = L.marker([point.latitude, point.longitude], {
       icon: customIcon,
@@ -153,6 +246,12 @@ function displayFilteredPoints() {
   });
   
   map.addLayer(mainClusterGroup);
+  
+  // Si le loader est encore visible, le masquer maintenant
+  if (window.loadingOverlayInstance) {
+    window.loadingOverlayInstance.hide();
+    window.loadingOverlayInstance = null;
+  }
 }
 
 // Création d'une légende pour la carte avec des marqueurs en forme de diamant

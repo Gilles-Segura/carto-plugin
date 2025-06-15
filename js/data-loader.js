@@ -11,7 +11,7 @@ function createLoadingOverlay() {
     oldOverlay.remove();
   }
   
-  // Créer un nouvel overlay
+  // Créer un nouvel overlay avec un style moderne
   const overlay = document.createElement('div');
   overlay.id = 'loading-overlay';
   overlay.style.position = 'fixed';
@@ -19,56 +19,94 @@ function createLoadingOverlay() {
   overlay.style.left = '0';
   overlay.style.width = '100%';
   overlay.style.height = '100%';
-  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.6)'; // Fond légèrement plus transparent
+  overlay.style.backdropFilter = 'blur(5px)'; // Effet de flou moderne
   overlay.style.zIndex = '9999';
   overlay.style.display = 'flex';
   overlay.style.justifyContent = 'center';
   overlay.style.alignItems = 'center';
-  overlay.style.flexDirection = 'column';
-  overlay.style.color = 'white';
-  overlay.style.fontFamily = 'Arial, sans-serif';
+  overlay.style.transition = 'all 0.3s ease';
   
-  // Conteneur du message
+  // Conteneur du message avec design moderne
   const messageBox = document.createElement('div');
   messageBox.id = 'loading-message';
   messageBox.style.backgroundColor = 'white';
-  messageBox.style.color = 'black';
-  messageBox.style.padding = '20px';
-  messageBox.style.borderRadius = '8px';
-  messageBox.style.maxWidth = '80%';
+  messageBox.style.color = '#333';
+  messageBox.style.padding = '25px 30px';
+  messageBox.style.borderRadius = '12px';
+  messageBox.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.15)';
+  messageBox.style.maxWidth = '450px';
+  messageBox.style.width = '85%';
   messageBox.style.textAlign = 'center';
+  messageBox.style.transform = 'translateY(0)';
+  messageBox.style.animation = 'loadingFadeIn 0.3s ease-out';
+  messageBox.style.fontFamily = "'Segoe UI', Roboto, 'Helvetica Neue', sans-serif";
   
-  // Titre
+  // Ajouter une animation CSS
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes loadingFadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    @keyframes progressAnimation {
+      from { background-position: 0 0; }
+      to { background-position: 50px 0; }
+    }
+  `;
+  document.head.appendChild(style);
+  
+  // Titre plus moderne
   const title = document.createElement('h2');
   title.textContent = 'Loading in progress...';
-  title.style.margin = '0 0 10px 0';
+  title.style.margin = '0 0 15px 0';
+  title.style.fontSize = '24px';
+  title.style.fontWeight = '500';
+  title.style.color = '#2d3748';
   
-  // Message de statut
+  // Message de statut avec meilleur style
   const statusMsg = document.createElement('p');
   statusMsg.id = 'loading-status';
   statusMsg.textContent = 'Initializing...';
+  statusMsg.style.margin = '0 0 20px 0';
+  statusMsg.style.color = '#4a5568';
+  statusMsg.style.fontSize = '16px';
   
-  // Compteur
+  // Compteur stylisé
   const counter = document.createElement('p');
   counter.id = 'loading-counter';
-  counter.style.fontSize = '12px';
   counter.textContent = 'Points loaded: 0';
+  counter.style.fontSize = '14px';
+  counter.style.color = '#718096';
+  counter.style.margin = '0 0 20px 0';
   
-  // Barre de progression
+  // Container de la barre de progression moderne
   const progressContainer = document.createElement('div');
   progressContainer.style.width = '100%';
-  progressContainer.style.backgroundColor = '#ddd';
+  progressContainer.style.height = '8px';
+  progressContainer.style.backgroundColor = '#e2e8f0';
   progressContainer.style.borderRadius = '4px';
-  progressContainer.style.marginTop = '10px';
-  progressContainer.style.height = '20px';
+  progressContainer.style.overflow = 'hidden';
+  progressContainer.style.marginBottom = '5px';
   
+  // Barre de progression améliorée
   const progressBar = document.createElement('div');
   progressBar.id = 'loading-progress';
   progressBar.style.width = '0%';
   progressBar.style.height = '100%';
-  progressBar.style.backgroundColor = '#4CAF50';
   progressBar.style.borderRadius = '4px';
-  progressBar.style.transition = 'width 0.3s';
+  progressBar.style.transition = 'width 0.4s ease-in-out';
+  // Gradient moderne pour la barre de progression
+  progressBar.style.background = 'linear-gradient(45deg, #38b2ac 0%, #4299e1 100%)';
+  // Effet de motif animé
+  progressBar.style.backgroundSize = '50px 50px';
+  progressBar.style.backgroundImage = 'linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent)';
+  progressBar.style.animation = 'progressAnimation 2s linear infinite';
   
   // Assembler tous les éléments
   progressContainer.appendChild(progressBar);
@@ -86,6 +124,11 @@ function createLoadingOverlay() {
       const statusElement = document.getElementById('loading-status');
       if (statusElement) {
         statusElement.textContent = message;
+        // Animation subtile lors de la mise à jour
+        statusElement.style.animation = 'pulse 0.3s ease-in-out';
+        setTimeout(() => {
+          statusElement.style.animation = '';
+        }, 300);
       }
     },
     updateProgress: function(progress) {
@@ -103,7 +146,12 @@ function createLoadingOverlay() {
     hide: function() {
       const overlay = document.getElementById('loading-overlay');
       if (overlay) {
-        overlay.style.display = 'none';
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+          if (overlay.parentNode) {
+            overlay.remove();
+          }
+        }, 300);
       }
     }
   };
@@ -401,25 +449,4 @@ window.testFileDecompression = async function(type) {
   }
 };
 
-// Créer un bouton de test dans la page
-document.addEventListener('DOMContentLoaded', function() {
-  console.log("Test d'accès à GitHub en cours...");
-  
-  // Création d'un bouton de test
-  const testButton = document.createElement('button');
-  testButton.textContent = 'Tester l\'accès GitHub';
-  testButton.style.position = 'fixed';
-  testButton.style.bottom = '10px';
-  testButton.style.right = '10px';
-  testButton.style.zIndex = '1000';
-  testButton.style.padding = '10px';
-  
-  // Ajout du bouton à la page
-  document.body.appendChild(testButton);
-  
-  // Fonction de test au clic
-  testButton.addEventListener('click', function() {
-    window.testFileDecompression('dam');
-  });
-});
 
