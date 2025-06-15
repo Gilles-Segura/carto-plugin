@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Atlas visualization plugin</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <style>
+    html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
+    #map { height: 100vh; width: 100vw; }
+    
+    /* Styles pour les panneaux de contrôle */
+    .top-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(135, 206, 235, 0.9); /* Bleu ciel comme sur la capture */
+      color: white;
+      padding: 15px 20px;
+      z-index: 1000;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .citation {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    
+    .side-panel {
+      position: absolute;
+      top: 80px; /* Espace pour la bannière supérieure */
+      left: 20px;
+      z-index: 1000;
+      width: 260px; /* Largeur fixe comme sur la capture */
+    }
+    
+    .control-item {
+      background: white;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    
+    .circle-button {
+      display: flex;
+      align-items: center;
+      background-color: white;
+      padding: 15px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      border: none;
+      width: 100%;
+      text-align: left;
+    }
+    
+    .circle-button:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .circle-icon {
+      width: 40px;
+      height: 40px;
+      background-color: #f0f0f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+    }
+    
+    .circle-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+    
+    .button-text {
+      font-size: 14px;
+      font-weight: bold;
+      color: #444;
+    }
+    
+    /* Styles du formulaire */
+    .download-form {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    
+    .download-form h3 {
+      margin-top: 0;
+      font-size: 18px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .form-field {
+      margin-bottom: 15px;
+    }
+    
+    .form-field label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #555;
+    }
+    
+    .form-field input,
+    .form-field select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .submit-button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+    }
+    
+    /* Styles pour les filtres */
+    .filter-panel {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    
+    .filter-panel h3 {
+      margin-top: 0;
+      font-size: 16px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    
+    .filter-section {
+      margin-bottom: 15px;
+    }
+    
+    .filter-section label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #555;
+    }
+    
+    .filter-option {
+      margin-bottom: 5px;
+    }
+    
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      margin-left: 5px;
+    }
+    
+    .color-swatch {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    
+    /* Légende */
+    .legend {
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+    
+    .legend h4 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .legend-item {
+      margin-bottom: 5px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .legend-color {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    
+    /* Styles cluster */
+    .marker-cluster-custom {
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  
+  <!-- Bannière supérieure avec texte d'information -->
+  <div class="top-banner">
+    <div class="citation">
+      <p>Click on the icons on the left to see different layers<br>
+      on the map filtered by barriers, countries and much more!<br>
+      Or download all data from the Atlas data base.</p>
+      
+      <p><strong>When using the Barrier Atlas data please use this citation:</strong><br>
+      AMBER Consortium (2020). The AMBER Barrier Atlas.<br>
+      A Pan-European database of artificial instream barriers. Version 1.0<br>
+      June 29th 2020. https://amber.international/european-barrier-atlas/</p>
+    </div>
+  </div>
+  
+  <!-- Panneau latéral avec les contrôles -->
+  <div class="side-panel">
+    <!-- Boutons circulaires -->
+    <div class="control-item">
+      <button class="circle-button" id="show-filter">
+        <div class="circle-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#777">
+            <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
+          </svg>
+        </div>
+        <span class="button-text">Filter the data by barrier type, height class, barrier density, map type and boundaries</span>
+      </button>
+    </div>
+    
+    <div class="control-item">
+      <button class="circle-button" id="show-tracker-filter">
+        <div class="circle-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#777">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+        </div>
+        <span class="button-text">Filter the data by ZHYD code</span>
+      </button>
+    </div>
+    
+    <div class="control-item">
+      <button class="circle-button" id="show-download">
+        <div class="circle-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#777">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+          </svg>
+        </div>
+        <span class="button-text">Download the data</span>
+      </button>
+    </div>
+    
+    <!-- Panneau de filtre -->
+    <div class="filter-panel" id="filter-panel" style="display: none;">
+      <h3>Filter the data</h3>
+      
+      <div class="filter-section">
+        <label>Barrier type:</label>
+        <div id="barrier-type-filters"></div>
+      </div>
+      
+      <div class="filter-section">
+        <label>Height class:</label>
+        <select id="data-source-filter">
+          <option value="">All height classes</option>
+        </select>
+      </div>
+      
+      <div class="filter-section">
+        <label>Barrier density:</label>
+        <input type="range" id="density-filter" min="0" max="10" step="1" value="0">
+        <div style="display: flex; justify-content: space-between;">
+          <span>Low</span>
+          <span id="density-value">0</span>
+          <span>High</span>
+        </div>
+      </div>
+      
+      <button class="submit-button" id="apply-filters">Apply filters</button>
+      <button class="submit-button" id="reset-filters" style="background-color: #f44336; margin-top: 10px;">Reset</button>
+    </div>
+    
+    <!-- Panneau de filtrage par ZHYD -->
+    <div class="filter-panel" id="tracker-panel" style="display: none;">
+      <h3>Filter by ZHYD code</h3>
+      
+      <div class="filter-section">
+        <label>ZHYD code:</label>
+        <select id="user-filter">
+          <option value="">All codes</option>
+        </select>
+      </div>
+      
+      <button class="submit-button" id="apply-user-filter">Apply filter</button>
+    </div>
+    
+    <!-- Formulaire de téléchargement -->
+    <div class="download-form" id="download-form" style="display: none;">
+      <h3>Download Data</h3>
+      
+      <p>To download the data please enter your details below and press continue</p>
+      
+      <form id="data-download-form">
+        <div class="form-field">
+          <label for="email">Email*:</label>
+          <input type="email" id="email" required>
+        </div>
+        
+        <div class="form-field">
+          <label for="country">Country*:</label>
+          <select id="country" required>
+            <option value="">Select a country</option>
+            <option value="FR">France</option>
+            <option value="BE">Belgium</option>
+            <option value="CH">Switzerland</option>
+            <option value="DE">Germany</option>
+            <option value="IT">Italy</option>
+            <option value="ES">Spain</option>
+            <option value="UK">United Kingdom</option>
+            <option value="IE">Ireland</option>
+          </select>
+        </div>
+        
+        <div class="form-field">
+          <label for="first-name">First Name:</label>
+          <input type="text" id="first-name">
+        </div>
+        
+        <div class="form-field">
+          <label for="last-name">Last Name:</label>
+          <input type="text" id="last-name">
+        </div>
+        
+        <div class="form-field">
+          <label for="organization">Organization:</label>
+          <input type="text" id="organization">
+        </div>
+        
+        <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
+          By providing your email you agree that the AMBER project can contact you with news and updates on the project.<br><br>
+          You will be able to unsubscribe from any emails at any time should you not wish to receive further information. Your details will not be shared with any other organisations outside the AMBER project.
+        </p>
+        
+        <button type="submit" class="submit-button">Continue</button>
+      </form>
+    </div>
+  </div>
+  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // Supabase client setup
+    const supabaseUrl = 'https://qidnzebmtbxhabtsprkx.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpZG56ZWJtdGJ4aGFidHNwcmt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NDQ3ODEsImV4cCI6MjA2NDQyMDc4MX0.IKCuSbFN0R3UVT6PBiOIWPly_hAuwgnc38FfmpmWbYM';
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Initialisation de la carte Leaflet
+    const map = L.map('map').setView([46.5, 2.5], 6); // Coordonnées et zoom initiaux
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Couleurs pour différents types
+    const typeColors = {};
+    const colorList = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf', '#999999'];
+    let colorIndex = 0;
+
+    // Cache des icônes pour éviter de les recréer
+    const iconCache = {};
+    
+    // Variables pour stocker les données et filtres
+    let allPoints = [];
+    let activeFilters = {
+      types: [],
+      source: '',
+      density: 0,
+      user: ''
+    };
+    
+    // Groupe de clusters principal
+    let mainClusterGroup = null;
+
+    // Création d'une icône personnalisée selon le type
+    function createCustomIcon(type) {
+      if (!type) type = 'default';
+      
+      // Si on a déjà créé une icône pour ce type, la réutiliser
+      if (iconCache[type]) return iconCache[type];
+
+      // Assigner une couleur au type s'il n'en a pas déjà une
+      if (!typeColors[type]) {
+        typeColors[type] = colorList[colorIndex % colorList.length];
+        colorIndex++;
+      }
+      
+      // Créer un élément SVG pour l'icône
+      const svgTemplate = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+          <circle cx="12" cy="12" r="10" fill="${typeColors[type]}" stroke="white" stroke-width="2"/>
+        </svg>
+      `;
+      
+      // Encoder correctement en Base64 pour l'URL data
+      const svgBase64 = btoa(unescape(encodeURIComponent(svgTemplate)));
+      
+      // Créer l'icône
+      iconCache[type] = L.icon({
+        iconUrl: 'data:image/svg+xml;base64,' + svgBase64,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+        popupAnchor: [0, -10]
+      });
+      
+      return iconCache[type];
+    }
+    
+    // Fonction pour créer un cluster personnalisé
+    function createClusterIcon(cluster) {
+      const count = cluster.getChildCount();
+      
+      // Déterminer la couleur en fonction du nombre d'éléments dans le cluster
+      let backgroundColor;
+      if (count < 10) {
+        backgroundColor = 'rgba(140, 210, 180, 0.8)'; // Vert clair
+      } else if (count < 50) {
+        backgroundColor = 'rgba(240, 180, 80, 0.8)'; // Orange
+      } else {
+        backgroundColor = 'rgba(240, 100, 100, 0.8)'; // Rouge
+      }
+      
+      // Créer l'élément HTML pour l'icône de cluster
+      return L.divIcon({
+        html: `<div class="marker-cluster-custom" style="background-color: ${backgroundColor};">${count}</div>`,
+        className: '',
+        iconSize: new L.Point(32, 32),
+        iconAnchor: [16, 16]
+      });
+    }
+
+    // Fonction pour générer des données de test si nécessaire
+    function genererDonneesTest() {
+      console.log("Generating test data because no data was found");
+      
+      // Points de test en France et en Europe
+      const pointsTest = [
+        { id: "T1", type: "dam", latitude: 48.8566, longitude: 2.3522, source: "HIGH", owner: "FR001" },
+        { id: "T2", type: "bridge", latitude: 45.7640, longitude: 4.8357, source: "LOW", owner: "FR002" },
+        { id: "T3", type: "culvert", latitude: 43.2965, longitude: 5.3698, source: "MEDIUM", owner: "FR003" },
+        { id: "T4", type: "weir", latitude: 47.2173, longitude: -1.5534, source: "HIGH", owner: "FR004" },
+        { id: "T5", type: "sluice", latitude: 44.8378, longitude: -0.5792, source: "LOW", owner: "FR005" },
+        { id: "T6", type: "dam", latitude: 50.8503, longitude: 4.3517, source: "MEDIUM", owner: "BE001" },
+        { id: "T7", type: "bridge", latitude: 52.3676, longitude: 4.9041, source: "HIGH", owner: "NL001" },
+        { id: "T8", type: "culvert", latitude: 51.5074, longitude: -0.1278, source: "LOW", owner: "UK001" },
+        { id: "T9", type: "weir", latitude: 48.2082, longitude: 16.3719, source: "MEDIUM", owner: "AT001" },
+        { id: "T10", type: "sluice", latitude: 41.9028, longitude: 12.4964, source: "HIGH", owner: "IT001" }
+      ];
+      
+      // Ajouter les points de test à allPoints
+      pointsTest.forEach(point => {
+        allPoints.push({
+          ...point,
+          tableConfig: { name: "test_data", type: point.type }
+        });
+      });
+      
+      // Créer la liste des types uniques pour le filtre
+      const uniqueTypes = [...new Set(allPoints.map(point => point.type))];
+      populateTypeFilters(uniqueTypes);
+      
+      // Créer la liste des sources de données uniques
+      const uniqueSources = [...new Set(allPoints.map(p => p.source))];
+      populateSourceFilters(uniqueSources);
+      
+      // Créer la liste des utilisateurs uniques
+      const uniqueUsers = [...new Set(allPoints.map(p => p.owner))];
+      populateUserFilters(uniqueUsers);
+      
+      // Afficher tous les points
+      displayFilteredPoints();
+    }
+
+    // Chargement et affichage des données
+    async function chargerEtAfficherDonnees() {
+      try {
+        // 1. Lire la table "typeatlas" pour obtenir la liste des noms de tables et leurs types
+        const { data: tablesInfo, error: errorTables } = await supabaseClient
+          .from('typeatlas')
+          .select('table_name, table_type');
+
+        if (errorTables) {
+          console.error('Erreur lors de la lecture de typeatlas:', errorTables.message);
+          alert('Error loading table types: ' + errorTables.message);
+          genererDonneesTest();
+          return;
+        }
+
+        if (!tablesInfo || tablesInfo.length === 0) {
+          console.warn('Aucune table trouvée dans typeatlas.');
+          alert('No data tables to display.');
+          genererDonneesTest();
+          return;
+        }
+
+        // Filtrer les tables et associer chaque table à son type
+        const tableConfigs = tablesInfo
+          .filter(info => info.table_name && info.table_name.trim() !== '' && info.table_name !== 'atlas2020')
+          .map(info => ({
+            name: info.table_name,
+            type: info.table_type || 'unknown'
+          }));
+
+        console.log('Tables to load with their types:', tableConfigs);
+        
+        // Réinitialiser les points
+        allPoints = [];
+        
+        // 2. Pour chaque nom de table récupéré, lire les données avec les colonnes adaptées
+        for (const tableConfig of tableConfigs) {
+          console.log(`Loading data for table: ${tableConfig.name} (type: ${tableConfig.type})`);
+          try {
+            // Utiliser les colonnes adaptées aux tables existantes
+            const { data: points, error: errorPoints } = await supabaseClient
+              .from(tableConfig.name)
+              .select('id, type, longitude, latitude, hclass, zhyd, rivername, height, basinname, country');
+
+            if (errorPoints) {
+              console.error(`Error reading table ${tableConfig.name}:`, errorPoints.message);
+              
+              // Essayer avec un ensemble minimal de colonnes
+              const { data: minimalPoints, error: minimalError } = await supabaseClient
+                .from(tableConfig.name)
+                .select('id, type, longitude, latitude');
+                
+              if (minimalError) {
+                console.error(`Error reading table ${tableConfig.name} with minimal columns:`, minimalError.message);
+                continue;
+              }
+              
+              if (minimalPoints && minimalPoints.length > 0) {
+                // Traiter les points minimaux
+                minimalPoints.forEach(point => {
+                  if (typeof point.latitude === 'number' && typeof point.longitude === 'number') {
+                    // Mapper les champs existants
+                    allPoints.push({
+                      ...point,
+                      source: null,
+                      owner: null,
+                      tableConfig
+                    });
+                  }
+                });
+                console.log(`${minimalPoints.length} points loaded with minimal columns for ${tableConfig.name}`);
+              }
+              continue;
+            }
+
+            if (points && points.length > 0) {
+              // Collecter tous les points valides
+              points.forEach(point => {
+                if (typeof point.latitude === 'number' && typeof point.longitude === 'number') {
+                  // Adapter les points pour qu'ils aient une structure cohérente avec le reste du code
+                  allPoints.push({
+                    ...point,
+                    // Utiliser hclass comme source et zhyd comme owner
+                    source: point.hclass,  
+                    owner: point.zhyd,
+                    tableConfig
+                  });
+                } else {
+                  console.warn(`Invalid location data for point from table ${tableConfig.name}:`, point);
+                }
+              });
+              console.log(`${points.length} points loaded for ${tableConfig.name}`);
+            } else {
+              console.log(`No points found for table ${tableConfig.name}`);
+            }
+          } catch (tableError) {
+            console.error(`Error processing table ${tableConfig.name}:`, tableError);
+          }
+        }
+
+        // Si aucun point n'a été chargé, générer des données de test
+        if (allPoints.length === 0) {
+          console.warn("No points loaded from any table, generating test data");
+          genererDonneesTest();
+          return;
+        }
+        
+        console.log(`Total points loaded: ${allPoints.length}`);
+        
+        // Créer la liste des types uniques pour le filtre
+        const uniqueTypes = [...new Set(allPoints.map(point => point.type || point.tableConfig.type))];
+        populateTypeFilters(uniqueTypes);
+        
+        // Créer la liste des sources de données uniques (maintenant basées sur hclass)
+        const uniqueSources = [...new Set(allPoints.filter(p => p.source).map(p => p.source))];
+        populateSourceFilters(uniqueSources);
+        
+        // Créer la liste des utilisateurs uniques (maintenant basées sur zhyd)
+        const uniqueUsers = [...new Set(allPoints.filter(p => p.owner).map(p => p.owner))];
+        populateUserFilters(uniqueUsers);
+
+        // Afficher tous les points initialement
+        displayFilteredPoints();
+        
+      } catch (error) {
+        console.error('General error while loading data:', error);
+        alert('A general error occurred while loading data.');
+        genererDonneesTest();
+      }
+    }
+    
+    // Remplissage des filtres avec les données disponibles
+    function populateTypeFilters(types) {
+      const container = document.getElementById('barrier-type-filters');
+      container.innerHTML = '';
+      
+      types.forEach(type => {
+        const div = document.createElement('div');
+        div.className = 'filter-option';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `type-${type}`;
+        checkbox.value = type;
+        
+        const checkboxContainer = document.createElement('div');
+        checkboxContainer.className = 'checkbox-container';
+        
+        const colorSwatch = document.createElement('span');
+        colorSwatch.className = 'color-swatch';
+        colorSwatch.style.backgroundColor = typeColors[type] || '#999';
+        
+        const label = document.createElement('label');
+        label.htmlFor = `type-${type}`;
+        label.textContent = type;
+        
+        checkboxContainer.appendChild(colorSwatch);
+        checkboxContainer.appendChild(label);
+        
+        div.appendChild(checkbox);
+        div.appendChild(checkboxContainer);
+        container.appendChild(div);
+      });
+    }
+    
+    function populateSourceFilters(sources) {
+      const select = document.getElementById('data-source-filter');
+      select.innerHTML = '<option value="">All height classes</option>';
+      
+      sources.forEach(source => {
+        if (source) {
+          const option = document.createElement('option');
+          option.value = source;
+          option.textContent = source;
+          select.appendChild(option);
+        }
+      });
+    }
+    
+    function populateUserFilters(users) {
+      const select = document.getElementById('user-filter');
+      select.innerHTML = '<option value="">All ZHYD codes</option>';
+      
+      users.forEach(user => {
+        if (user) {
+          const option = document.createElement('option');
+          option.value = user;
+          option.textContent = user;
+          select.appendChild(option);
+        }
+      });
+    }
+    
+    // Affichage des points filtrés sur la carte
+    function displayFilteredPoints() {
+      // Si un groupe de clusters existe déjà, le supprimer
+      if (mainClusterGroup) {
+        map.removeLayer(mainClusterGroup);
+      }
+      
+      // Créer un nouveau groupe de clusters
+      mainClusterGroup = L.markerClusterGroup({
+        maxClusterRadius: function(zoom) {
+          return zoom <= 4 ? 80 : 60; // Rayon plus petit pour des clusters plus granulaires
+        },
+        iconCreateFunction: createClusterIcon,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true
+      });
+      
+      // Filtrer les points selon les filtres actifs
+      const filteredPoints = allPoints.filter(point => {
+        const pointType = point.type || point.tableConfig.type;
+        
+        // Filtre par type
+        if (activeFilters.types.length > 0 && !activeFilters.types.includes(pointType)) {
+          return false;
+        }
+        
+        // Filtre par source (maintenant hclass)
+        if (activeFilters.source && point.source !== activeFilters.source) {
+          return false;
+        }
+        
+        // Filtre par utilisateur (maintenant zhyd)
+        if (activeFilters.user && point.owner !== activeFilters.user) {
+          return false;
+        }
+        
+        // Filtre par densité (simulation)
+        if (activeFilters.density > 0) {
+          const randomValue = Math.random() * 10;
+          if (randomValue < activeFilters.density) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      console.log(`Displaying ${filteredPoints.length} points after filtering`);
+      
+      // Ajouter les marqueurs au groupe de clusters
+      filteredPoints.forEach(point => {
+        const markerType = point.type || point.tableConfig.type;
+        const customIcon = createCustomIcon(markerType);
+        
+        let popupContent = `
+          <div style="font-family: Arial, sans-serif; font-size: 13px;">
+            <h4 style="margin: 0 0 8px 0;">${point.id || 'Barrier'}</h4>
+            <div><strong>Type:</strong> ${markerType || 'N/A'}</div>
+        `;
+        
+        if (point.source) {
+          popupContent += `<div><strong>Height Class:</strong> ${point.source}</div>`;
+        }
+        
+        if (point.owner) {
+          popupContent += `<div><strong>ZHYD Code:</strong> ${point.owner}</div>`;
+        }
+        
+        if (point.rivername) {
+          popupContent += `<div><strong>River:</strong> ${point.rivername}</div>`;
+        }
+        
+        if (point.basinname) {
+          popupContent += `<div><strong>Basin:</strong> ${point.basinname}</div>`;
+        }
+        
+        if (point.height) {
+          popupContent += `<div><strong>Height:</strong> ${point.height}</div>`;
+        }
+        
+        if (point.country) {
+          popupContent += `<div><strong>Country:</strong> ${point.country}</div>`;
+        }
+        
+        popupContent += '</div>';
+        
+        const marker = L.marker([point.latitude, point.longitude], { icon: customIcon })
+          .bindPopup(popupContent);
+        
+        mainClusterGroup.addLayer(marker);
+      });
+      
+      // Ajouter le groupe de clusters à la carte
+      map.addLayer(mainClusterGroup);
+      
+      // Mettre à jour la légende
+      if (Object.keys(typeColors).length > 0) {
+        createLegend();
+      }
+      
+      // Mettre à jour le compteur
+      document.getElementById('density-value').textContent = activeFilters.density;
+    }
+    
+    // Création d'une légende pour la carte
+    function createLegend() {
+      // Supprimer la légende existante si elle existe
+      const existingLegend = document.querySelector('.legend');
+      if (existingLegend) {
+        existingLegend.remove();
+      }
+      
+      const legend = L.control({ position: 'bottomright' });
+      
+      legend.onAdd = function() {
+        const div = L.DomUtil.create('div', 'legend');
+        div.innerHTML = '<h4>Barrier types</h4>';
+        
+        // Ajouter un élément de légende pour chaque type
+        Object.entries(typeColors).forEach(([type, color]) => {
+          div.innerHTML += `
+            <div class="legend-item">
+              <span class="legend-color" style="background-color: ${color}"></span>
+              ${type}
+            </div>`;
+        });
+        
+        return div;
+      };
+      
+      legend.addTo(map);
+    }
+    
+    // Gestion des événements UI
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialiser la carte et charger les données
+      chargerEtAfficherDonnees();
+      
+      // Boutons pour afficher/masquer les panneaux
+      document.getElementById('show-filter').addEventListener('click', function() {
+        document.getElementById('filter-panel').style.display = 'block';
+        document.getElementById('tracker-panel').style.display = 'none';
+        document.getElementById('download-form').style.display = 'none';
+      });
+      
+      document.getElementById('show-tracker-filter').addEventListener('click', function() {
+        document.getElementById('filter-panel').style.display = 'none';
+        document.getElementById('tracker-panel').style.display = 'block';
+        document.getElementById('download-form').style.display = 'none';
+      });
+      
+      document.getElementById('show-download').addEventListener('click', function() {
+        document.getElementById('filter-panel').style.display = 'none';
+        document.getElementById('tracker-panel').style.display = 'none';
+        document.getElementById('download-form').style.display = 'block';
+      });
+      
+      // Appliquer les filtres
+      document.getElementById('apply-filters').addEventListener('click', function() {
+        // Récupérer les types sélectionnés
+        const typeCheckboxes = document.querySelectorAll('#barrier-type-filters input:checked');
+        activeFilters.types = Array.from(typeCheckboxes).map(cb => cb.value);
+        
+        // Récupérer la source sélectionnée
+        activeFilters.source = document.getElementById('data-source-filter').value;
+        
+        // Récupérer la valeur de densité
+        activeFilters.density = parseInt(document.getElementById('density-filter').value);
+        
+        // Afficher les points filtrés
+        displayFilteredPoints();
+      });
+      
+      // Réinitialiser les filtres
+      document.getElementById('reset-filters').addEventListener('click', function() {
+        // Décocher toutes les cases
+        document.querySelectorAll('#barrier-type-filters input').forEach(cb => {
+          cb.checked = false;
+        });
+        
+        // Réinitialiser le filtre de source
+        document.getElementById('data-source-filter').value = '';
+        
+        // Réinitialiser le filtre de densité
+        document.getElementById('density-filter').value = 0;
+        document.getElementById('density-value').textContent = '0';
+        
+        // Réinitialiser les filtres actifs
+        activeFilters = {
+          types: [],
+          source: '',
+          density: 0,
+          user: ''
+        };
+        
+        // Afficher tous les points
+        displayFilteredPoints();
+      });
+      
+      // Appliquer le filtre utilisateur
+      document.getElementById('apply-user-filter').addEventListener('click', function() {
+        activeFilters.user = document.getElementById('user-filter').value;
+        displayFilteredPoints();
+      });
+      
+      // Mettre à jour l'affichage de la valeur de densité
+      document.getElementById('density-filter').addEventListener('input', function() {
+        document.getElementById('density-value').textContent = this.value;
+      });
+      
+      // Gestion du formulaire de téléchargement
+      document.getElementById('data-download-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const country = document.getElementById('country').value;
+        const firstName = document.getElementById('first-name').value;
+        const lastName = document.getElementById('last-name').value;
+        const organization = document.getElementById('organization').value;
+        
+        // Simuler le téléchargement des données
+        console.log('Downloading data for:', { 
+          email, country, firstName, lastName, organization 
+        });
+        
+        alert('Thank you! Your download will begin shortly. You will also receive an email with the download link.');
+      });
+    });
+  </script>
+</body>
+</html>
