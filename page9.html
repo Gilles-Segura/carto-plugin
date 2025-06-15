@@ -184,13 +184,18 @@
     </div>
   </div>
   
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="js/map-config.js"></script>
-  <script src="js/data-loader.js"></script>
-  <script src="js/markers.js"></script>
-  <script src="js/filters.js"></script>
-  <script src="js/ui-controls.js"></script>
+  <!-- Bibliothèques tierces d'abord -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pako@2.0.4/dist/pako.min.js"></script>
+
+<!-- Ensuite vos scripts dans le bon ordre -->
+<script src="js/map-config.js"></script>
+<script src="js/data-loader.js"></script>
+<script src="js/markers.js"></script>
+<script src="js/filters.js"></script>
+<script src="js/ui-controls.js"></script>
+
+
 </body>
 </html>
