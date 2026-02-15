@@ -23,10 +23,49 @@
       border-radius: 50%;
       margin-right: 5px;
     }
+
+    /* Overlay "Map under construction" (no changes to existing logic) */
+    #__uc_box {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.86);
+      z-index: 99999;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    #__uc_card {
+      background: #fff;
+      padding: 20px 26px;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      max-width: 720px;
+      width: 88%;
+      text-align: center;
+      border: 1px solid #eef2f6;
+    }
+    #__uc_card h1 { margin: 0 0 6px; font-size: 20px; color: #111; }
+    #__uc_card p { margin: 0; color: #555; }
+    #__uc_close { display: inline-block; margin-top: 12px; padding: 8px 12px; background: #0366d6; color: #fff; border-radius: 8px; text-decoration: none; }
   </style>
 </head>
 <body>
   <div id="map"></div>
+
+  <!-- START: centered "Map under construction" notice (inserted, does not modify existing scripts) -->
+  <div id="__uc_box" role="status" aria-live="polite">
+    <div id="__uc_card">
+ <h1>Map under construction</h1>
+<p>The map is temporarily disabled — feature coming soon.</p>
+      <div><a id="__uc_close" href="#" onclick="document.getElementById('__uc_box').style.display='none';return false;">Fermer</a></div>
+    </div>
+  </div>
+  <!-- END: centered notice -->
+
+  <!-- Mode temporaire: empêcher les appels Supabase -->
+  <script>window.SKIP_SUPABASE = true;</script>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
@@ -185,8 +224,15 @@
       legend.addTo(map);
     }
 
-    // Appeler la fonction principale au chargement de la page
-    document.addEventListener('DOMContentLoaded', chargerEtAfficherDonnees);
+    // Appeler la fonction principale au chargement de la page (guard pour SKIP_SUPABASE)
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.SKIP_SUPABASE) {
+        console.log('SKIP_SUPABASE=true — supabase loading skipped.');
+        return;
+      }
+      chargerEtAfficherDonnees();
+    });
   </script>
 </body>
 </html>
+   
